@@ -1,0 +1,81 @@
+import { uniqueId } from "lodash";
+
+interface MenuitemsType {
+  [x: string]: any;
+  id?: string;
+  navlabel?: boolean;
+  subheader?: string;
+  title?: string;
+  icon?: any;
+  href?: string;
+  children?: MenuitemsType[];
+  chip?: string;
+  chipColor?: string;
+  variant?: string;
+  external?: boolean;
+}
+import {
+  IconUserCircle,
+  IconBook,
+  IconUsers,
+  IconUserCheck,
+  IconNotes,
+  IconChartBar,
+  IconWallet
+} from "@tabler/icons-react";
+
+
+
+const Menuitems: MenuitemsType[] = [
+  {
+    id: uniqueId(),
+    title: "Dashboard",
+    icon: IconChartBar,
+    href: "/app/dashboard",
+    chipColor: "secondary",
+  },
+  {
+    id: uniqueId(),
+    title: "Teachers",
+    icon: IconUserCheck,
+    href: "/app/teachers",
+  },
+  {
+    id: uniqueId(),
+    title: "Students",
+    icon: IconUserCircle,
+    href: "/app/students",
+  },
+  {
+    id: uniqueId(),
+    title: "Parents",
+    icon: IconUsers,
+    href: "/app/parents",
+  },
+  {
+    id: uniqueId(),
+    title: "Subjects",
+    icon: IconBook,
+    href: "/app/subjects",
+  },
+  {
+    id: uniqueId(),
+    title: "Quizzes",
+    icon: IconNotes,
+    href: "/app/quizzes",
+  },
+  {
+    id: uniqueId(),
+    title: "Stripe Subscriptions",
+    icon: IconWallet,
+    href: "/app/subscriptions",
+  },
+  // {
+  //   id: uniqueId(),
+  //   title: "Settings",
+  //   icon: IconSettings,
+  //   href: "/app/settings",
+  // },
+];
+
+export default Menuitems;

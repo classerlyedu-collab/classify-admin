@@ -1,0 +1,325 @@
+import * as React from "react";
+
+import { useTheme } from "@mui/material/styles";
+import {
+  Typography,
+  TableHead,
+  Box,
+  Table,
+  TableBody,
+  TableCell,
+  TablePagination,
+  TableRow,
+  TableFooter,
+  IconButton,
+  TableContainer
+} from "@mui/material";
+import { IconArrowRight } from "@tabler/icons-react";
+import CircularProgress from "@mui/material/CircularProgress";
+import Backdrop from "@mui/material/Backdrop";
+import FirstPageIcon from "@mui/icons-material/FirstPage";
+import KeyboardArrowLeft from "@mui/icons-material/KeyboardArrowLeft";
+import KeyboardArrowRight from "@mui/icons-material/KeyboardArrowRight";
+import LastPageIcon from "@mui/icons-material/LastPage";
+import Breadcrumb from "../../../src/layouts/full/shared/breadcrumb/Breadcrumb";
+import PageContainer from "../../../src/components/container/PageContainer";
+import ParentCard from "../../../src/components/shared/ParentCard";
+import BlankCard from "../../../src/components/shared/BlankCard";
+import { useRouter } from "next/router";
+import endPoints from "../../../src/constant/apiEndpoint";
+import apiRequest from "../../../src/utils/axios";
+import { QuizType } from "../../../src/types/Quiz";
+
+interface TablePaginationActionsProps {
+  count: number;
+  page: number;
+  rowsPerPage: number;
+  onPageChange: (
+    event: React.MouseEvent<HTMLButtonElement>,
+    newPage: number
+  ) => void;
+}
+
+function TablePaginationActions(props: TablePaginationActionsProps) {
+  const theme = useTheme();
+  const { count, page, rowsPerPage, onPageChange } = props;
+
+  const handleFirstPageButtonClick = (event: any) => {
+    onPageChange(event, 0);
+  };
+
+  const handleBackButtonClick = (event: any) => {
+    onPageChange(event, page - 1);
+  };
+
+  const handleNextButtonClick = (event: any) => {
+    onPageChange(event, page + 1);
+  };
+
+  const handleLastPageButtonClick = (event: any) => {
+    onPageChange(event, Math.max(0, Math.ceil(count / rowsPerPage) - 1));
+  };
+
+  return (
+    <Box sx={{ flexShrink: 0, ml: 2.5 }}>
+      <IconButton
+        onClick={handleFirstPageButtonClick}
+        disabled={page === 0}
+        aria-label="first page"
+      >
+        {theme.direction === "rtl" ? <LastPageIcon /> : <FirstPageIcon />}
+      </IconButton>
+      <IconButton
+        onClick={handleBackButtonClick}
+        disabled={page === 0}
+        aria-label="previous page"
+      >
+        {theme.direction === "rtl" ? (
+          <KeyboardArrowRight />
+        ) : (
+          <KeyboardArrowLeft />
+        )}
+      </IconButton>
+      <IconButton
+        onClick={handleNextButtonClick}
+        disabled={page >= Math.ceil(count / rowsPerPage) - 1}
+        aria-label="next page"
+      >
+        {theme.direction === "rtl" ? (
+          <KeyboardArrowLeft />
+        ) : (
+          <KeyboardArrowRight />
+        )}
+      </IconButton>
+      <IconButton
+        onClick={handleLastPageButtonClick}
+        disabled={page >= Math.ceil(count / rowsPerPage) - 1}
+        aria-label="last page"
+      >
+        {theme.direction === "rtl" ? <FirstPageIcon /> : <LastPageIcon />}
+      </IconButton>
+    </Box>
+  );
+}
+
+const BCrumb = [
+  {
+    to: "/",
+    title: "Home",
+  },
+  {
+    title: "Quizzes",
+  },
+];
+
+const PaginationTable = () => {
+  const [isLoader, setIsloader] = React.useState(false);
+
+  const [quizzess, setQuizzess] = React.useState<QuizType[]>([]);
+
+  const router = useRouter();
+  const [page, setPage] = React.useState(0);
+  const [rowsPerPage, setRowsPerPage] = React.useState(5);
+
+  // Avoid a layout jump when reaching the last page with empty rows.
+  const emptyRows =
+    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - quizzess.length) : 0;
+
+  const handleChangePage = (event: any, newPage: any) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: any) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const fetchQuizzess = () => {
+    setIsloader(true);
+
+    const token = typeof window !== "undefined" ? window.localStorage?.getItem('authToken') : null;
+    if (!token) {
+      router.push('/');
+      setIsloader(false);
+      return; // Exit if no token is available
+    };
+
+    const config = {
+      headers: { Authorization: `Bearer ${token}` }
+    };
+
+    apiRequest
+      .get(endPoints.QUIZZES, config)
+      .then((response) => {
+        console.log("Response ====>", response);
+        setQuizzess(response.data);
+        setIsloader(false);
+      })
+      .catch((error) => {
+        console.log("fetchStudents ==> " + error);
+        setIsloader(false);
+      });
+  };
+
+  React.useEffect(() => {
+    fetchQuizzess();
+  }, []);
+
+
+  return (
+    <PageContainer>
+      <Backdrop
+        sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={isLoader}
+      >
+        <CircularProgress color="inherit" />
+      </Backdrop>
+
+      {/* breadcrumb */}
+      <Breadcrumb
+        title="Quizzes"
+        items={BCrumb}
+        addBtn="Add Quiz"
+        isBtn={true}
+        addBtnHREF="/app/quizzes/create"
+      />
+      {/* end breadcrumb */}
+      <ParentCard title="Quizzes">
+        <BlankCard>
+          <TableContainer>
+            <Table
+              aria-label="custom pagination table"
+              sx={{
+                whiteSpace: "nowrap",
+              }}
+            >
+              <TableHead>
+                <TableRow>
+                  <TableCell>
+                    <Typography variant="h6">Quiz</Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="h6">Grade</Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="h6">Subject</Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="h6">Topic</Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="h6">Lesson</Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="h6">Questions</Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="h6">Details</Typography>
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {(rowsPerPage > 0
+                  ? quizzess
+                    .slice(
+                      page * rowsPerPage,
+                      page * rowsPerPage + rowsPerPage
+                    )
+                  : quizzess?.sort((a, b) => (a?.type > b?.type ? -1 : 1))
+                ).map((row, index) => (
+                  <TableRow key={row._id}>
+                    <TableCell>
+                      <Typography
+                        color="textSecondary"
+                        variant="h6"
+                        fontWeight="400"
+                      >
+                        Quiz {index+1}
+                      </Typography>
+                    </TableCell>
+
+                    <TableCell>
+                      <Typography
+                        color="textSecondary"
+                        variant="h6"
+                        fontWeight="400"
+                      >
+                        {row.grade.grade}
+                      </Typography>
+                    </TableCell>
+
+                    <TableCell>
+                      <Typography variant="subtitle2">
+                        {row?.subject?.name}
+                      </Typography>
+                    </TableCell>
+
+                    <TableCell>
+                      <Typography variant="subtitle2">
+                        {row?.topic?.name ?? 'N/A'}
+                      </Typography>
+                    </TableCell>
+
+                    <TableCell>
+                      <Typography variant="subtitle2">
+                        {row?.lesson?.name ?? 'N/A'}
+                      </Typography>
+                    </TableCell>
+
+                    <TableCell>
+                      <Typography variant="subtitle2">
+                        {row?.questions?.length ?? 'N/A'}
+                      </Typography>
+                    </TableCell>
+
+                    <TableCell>
+                      <Box>
+                        <IconArrowRight
+                          style={{ cursor: "pointer" }}
+                          size="21"
+                          onClick={() => {
+                            router.push("/app/quizzes/" + row._id);
+                          }}
+                        />
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ))}
+
+                {emptyRows > 0 && (
+                  <TableRow style={{ height: 53 * emptyRows }}>
+                    <TableCell colSpan={6} />
+                  </TableRow>
+                )}
+              </TableBody>
+              <TableFooter>
+                <TableRow>
+                  <TablePagination
+                    rowsPerPageOptions={[
+                      5,
+                      10,
+                      25,
+                      { label: "All", value: -1 },
+                    ]}
+                    colSpan={6}
+                    count={quizzess.length}
+                    rowsPerPage={rowsPerPage}
+                    page={page}
+                    SelectProps={{
+                      native: true,
+                    }}
+                    onPageChange={handleChangePage}
+                    onRowsPerPageChange={handleChangeRowsPerPage}
+                    ActionsComponent={TablePaginationActions}
+                  />
+                </TableRow>
+              </TableFooter>
+            </Table>
+          </TableContainer>
+        </BlankCard>
+      </ParentCard>
+    </PageContainer>
+  );
+};
+
+export default PaginationTable;
