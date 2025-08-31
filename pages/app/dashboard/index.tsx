@@ -74,8 +74,7 @@ const Modern = () => {
     apiRequest
       .get(`${endPoints.QUIZ_STATS}/${subjectId}`, config)
       .then((response: any) => {
-        if (response.success) {
-          console.log("response.data.data", response.data);
+        if (response && response.data) {
           setQuizStats(response.data);
         }
         setIsloader(false);
@@ -103,12 +102,13 @@ const Modern = () => {
     apiRequest
       .get(endPoints.DASHBOARD_ANALYTICS, config)
       .then((response: any) => {
-        console.log("Response ====>", response);
-        setAnalytics(response.data);
+        if (response && response.data) {
+          setAnalytics(response.data);
+        }
         setIsloader(false);
       })
       .catch((error: any) => {
-        console.log("fetchAnalytics ==> " + error);
+        console.log("fetchAnalytics error ==> ", error);
         setIsloader(false);
       });
   };
@@ -130,12 +130,13 @@ const Modern = () => {
     apiRequest
       .get(endPoints.GET_ACTIVE_USERS, config)
       .then((response: any) => {
-        // console.log("Response of active users =======>", response.data);
-        setActiveUsers(response.data);
+        if (response && response.data) {
+          setActiveUsers(response.data);
+        }
         setIsloader(false);
       })
       .catch((error: any) => {
-        console.log("fetchAnalytics ==> " + error);
+        console.log("fetchUserData error ==> ", error);
         setIsloader(false);
       });
   };
@@ -182,7 +183,7 @@ const Modern = () => {
           {/* column */}
           <Grid item xs={12} lg={18}>
             {/* <ActiveUsers/> */}
-            
+
           </Grid>
           {/* column */}
           <Grid item xs={12} lg={4}>

@@ -127,7 +127,7 @@ const PaginationTable = () => {
 
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - students.length) : 0;
+    page > 0 && Array.isArray(students) ? Math.max(0, (1 + page) * rowsPerPage - students.length) : 0;
 
   const handleChangePage = (event: any, newPage: any) => {
     setPage(newPage);
@@ -155,12 +155,13 @@ const PaginationTable = () => {
     apiRequest
       .get(endPoints.STUDENTS, config)
       .then((response) => {
-        console.log("Response ====>", response);
-        setStudents(response.data);
+        if (response && response.data) {
+          setStudents(response.data);
+        }
         setIsloader(false);
       })
       .catch((error) => {
-        console.log("fetchStudents ==> " + error);
+        console.log("fetchStudents error ==> ", error);
         setIsloader(false);
       });
   };
@@ -212,14 +213,22 @@ const PaginationTable = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {(rowsPerPage > 0
+                {!Array.isArray(students) || students.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center">
+                      <Typography variant="body2" color="textSecondary">
+                        {!Array.isArray(students) ? "Loading..." : "No students found"}
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (rowsPerPage > 0
                   ? students
                     .sort((a, b) => (a?.code > b?.code ? -1 : 1))
                     .slice(
                       page * rowsPerPage,
                       page * rowsPerPage + rowsPerPage
                     )
-                  : students?.sort((a, b) => (a?.code > b?.code ? -1 : 1))
+                  : students.sort((a, b) => (a?.code > b?.code ? -1 : 1))
                 ).map((row) => (
                   <TableRow key={row?.code}>
                     <TableCell>
@@ -286,7 +295,7 @@ const PaginationTable = () => {
                       { label: "All", value: -1 },
                     ]}
                     colSpan={6}
-                    count={students.length}
+                    count={Array.isArray(students) ? students.length : 0}
                     rowsPerPage={rowsPerPage}
                     page={page}
                     SelectProps={{

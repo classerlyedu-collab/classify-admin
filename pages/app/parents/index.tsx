@@ -127,7 +127,7 @@ const PaginationTable = () => {
 
   // Avoid a layout jump when reaching the last page with empty data.
   const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - parentsData.length) : 0;
+    page > 0 && Array.isArray(parentsData) ? Math.max(0, (1 + page) * rowsPerPage - parentsData.length) : 0;
 
   const handleChangePage = (event: any, newPage: any) => {
     setPage(newPage);
@@ -155,12 +155,13 @@ const PaginationTable = () => {
     apiRequest
       .get(endPoints.PARENTS, config)
       .then((response) => {
-        console.log("Response ====>", response);
-        setParentsData(response.data);
+        if (response && response.data) {
+          setParentsData(response.data);
+        }
         setIsloader(false);
       })
       .catch((error) => {
-        console.log("fetchParents ==> " + error);
+        console.log("fetchParents error ==> ", error);
         setIsloader(false);
       });
   };
@@ -218,7 +219,15 @@ const PaginationTable = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {(rowsPerPage > 0
+                {!Array.isArray(parentsData) || parentsData.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center">
+                      <Typography variant="body2" color="textSecondary">
+                        {!Array.isArray(parentsData) ? "Loading..." : "No parents found"}
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (rowsPerPage > 0
                   ? parentsData
                     .sort((a, b) => (a.code > b.code ? -1 : 1))
                     .slice(
@@ -294,7 +303,7 @@ const PaginationTable = () => {
                       { label: "All", value: -1 },
                     ]}
                     colSpan={6}
-                    count={parentsData.length}
+                    count={Array.isArray(parentsData) ? parentsData.length : 0}
                     rowsPerPage={rowsPerPage}
                     page={page}
                     SelectProps={{

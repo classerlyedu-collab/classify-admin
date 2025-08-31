@@ -15,7 +15,7 @@ import { Stack } from "@mui/system";
 import { useRouter } from "next/router";
 
 const Profile = () => {
-  const router = useRouter()
+  const router = useRouter();
   const [anchorEl2, setAnchorEl2] = useState(null);
   const handleClick2 = (event: any) => {
     setAnchorEl2(event.currentTarget);
@@ -105,8 +105,8 @@ const Profile = () => {
         <Box mt={2}>
           <Button
             href=""
-            onClick={()=>{
-              if(typeof window !== 'undefined'){
+            onClick={() => {
+              if (typeof window !== 'undefined') {
                 localStorage.removeItem('userData');
               }
               router.replace('/')

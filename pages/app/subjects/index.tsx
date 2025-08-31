@@ -127,7 +127,7 @@ const PaginationTable = () => {
 
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - subjects.length) : 0;
+    page > 0 && Array.isArray(subjects) ? Math.max(0, (1 + page) * rowsPerPage - subjects.length) : 0;
 
   const handleChangePage = (event: any, newPage: any) => {
     setPage(newPage);
@@ -155,12 +155,13 @@ const PaginationTable = () => {
     apiRequest
       .get(endPoints.SUBJECTS, config)
       .then((response) => {
-        console.log("Response ====>", response);
-        setSubjects(response.data);
+        if (response && response.data) {
+          setSubjects(response.data);
+        }
         setIsloader(false);
       })
       .catch((error) => {
-        console.log("fetchSubjects ==> " + error);
+        console.log("fetchSubjects error ==> ", error);
         setIsloader(false);
       });
   };
@@ -176,7 +177,7 @@ const PaginationTable = () => {
 
     const config = { headers: { Authorization: `Bearer ${token}` } };
 
-    console.log(id, name, image);
+
 
     apiRequest
       .put(endPoints.EDIT_SUBJECT, { id, name, image }, config)
@@ -186,7 +187,6 @@ const PaginationTable = () => {
       })
       .catch((error) => {
         toast.error('Error Saving Subject!');
-        console.log(error);
       });
     setSelectedSubject(null);
 
@@ -207,7 +207,6 @@ const PaginationTable = () => {
       })
       .catch((error) => {
         toast.error('Error Deleting Subject!');
-        console.log(error);
       });
 
     setSelectedSubject(null);
@@ -263,13 +262,21 @@ const PaginationTable = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {(rowsPerPage > 0
+                {!Array.isArray(subjects) || subjects.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center">
+                      <Typography variant="body2" color="textSecondary">
+                        {!Array.isArray(subjects) ? "Loading..." : "No subjects found"}
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (rowsPerPage > 0
                   ? subjects
                     .slice(
                       page * rowsPerPage,
                       page * rowsPerPage + rowsPerPage
                     )
-                  : subjects?.sort((a, b) => (a?.name > b?.name ? -1 : 1))
+                  : subjects.sort((a, b) => (a?.name > b?.name ? -1 : 1))
                 ).map((row) => (
                   <TableRow key={row._id}>
                     <TableCell>
@@ -344,7 +351,7 @@ const PaginationTable = () => {
                       { label: "All", value: -1 },
                     ]}
                     colSpan={6}
-                    count={subjects.length}
+                    count={Array.isArray(subjects) ? subjects.length : 0}
                     rowsPerPage={rowsPerPage}
                     page={page}
                     SelectProps={{

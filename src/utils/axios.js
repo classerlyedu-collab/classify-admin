@@ -13,13 +13,10 @@ const apiRequest = axios.create({
 
 apiRequest.interceptors.response.use(
   (response) => {
-    console.log(response);
-
     if (response.status === 200 || response.status === 201) {
       if (response?.data?.success) {
         return Promise.resolve(response?.data);
       } else {
-        console.log(response);
         // toast.error(response.data.message);
         return Promise.reject(response?.data?.message);
       }
@@ -33,11 +30,12 @@ apiRequest.interceptors.response.use(
           localStorage.removeItem("userData");
         }
       }
-      return Promise.reject(error.response); // return the response for further handling
+      // Return the error message instead of the full response object
+      return Promise.reject(error.response?.data?.message || error.response?.statusText || 'An error occurred');
     } else {
       // Handle errors without a response, like network errors
       console.error("Network or server error:", error.message);
-      return Promise.reject(error);
+      return Promise.reject(error.message || 'Network error occurred');
     }
   }
 );

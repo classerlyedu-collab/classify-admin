@@ -161,7 +161,7 @@ const PaginationTable = () => {
     axios
       .get(endPoints.STUDENTS + "list", config)
       .then((res) => {
-        console.log(res.data.service);
+
         setData(res.data.service);
         setIsloader(false);
       })
@@ -212,12 +212,12 @@ const PaginationTable = () => {
   };
 
   const deleteServices = (id: number) => {
-    console.log(id);
+
     setIsloader(true);
     axios
       .delete(endPoints.STUDENTS + id, config)
       .then((res) => {
-        console.log(res);
+
         setOpen(true);
         getServices();
         setIsloader(false);
@@ -296,11 +296,11 @@ const PaginationTable = () => {
               <TableBody>
                 {(rowsPerPage > 0
                   ? data
-                      .sort((a, b) => (a.id > b.id ? -1 : 1))
-                      .slice(
-                        page * rowsPerPage,
-                        page * rowsPerPage + rowsPerPage
-                      )
+                    .sort((a, b) => (a.id > b.id ? -1 : 1))
+                    .slice(
+                      page * rowsPerPage,
+                      page * rowsPerPage + rowsPerPage
+                    )
                   : data.sort((a, b) => (a.id > b.id ? -1 : 1))
                 ).map((row) => (
                   <TableRow key={row.id}>

@@ -123,7 +123,7 @@ const PaginationTable = () => {
 
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - quizzess.length) : 0;
+    page > 0 && Array.isArray(quizzess) ? Math.max(0, (1 + page) * rowsPerPage - quizzess.length) : 0;
 
   const handleChangePage = (event: any, newPage: any) => {
     setPage(newPage);
@@ -151,12 +151,13 @@ const PaginationTable = () => {
     apiRequest
       .get(endPoints.QUIZZES, config)
       .then((response) => {
-        console.log("Response ====>", response);
-        setQuizzess(response.data);
+        if (response && response.data) {
+          setQuizzess(response.data);
+        }
         setIsloader(false);
       })
       .catch((error) => {
-        console.log("fetchStudents ==> " + error);
+        console.log("fetchQuizzes error ==> ", error);
         setIsloader(false);
       });
   };
@@ -219,13 +220,21 @@ const PaginationTable = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {(rowsPerPage > 0
+                {!Array.isArray(quizzess) || quizzess.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} align="center">
+                      <Typography variant="body2" color="textSecondary">
+                        {!Array.isArray(quizzess) ? "Loading..." : "No quizzes found"}
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (rowsPerPage > 0
                   ? quizzess
                     .slice(
                       page * rowsPerPage,
                       page * rowsPerPage + rowsPerPage
                     )
-                  : quizzess?.sort((a, b) => (a?.type > b?.type ? -1 : 1))
+                  : quizzess.sort((a, b) => (a?.type > b?.type ? -1 : 1))
                 ).map((row, index) => (
                   <TableRow key={row._id}>
                     <TableCell>
@@ -234,7 +243,7 @@ const PaginationTable = () => {
                         variant="h6"
                         fontWeight="400"
                       >
-                        Quiz {index+1}
+                        Quiz {index + 1}
                       </Typography>
                     </TableCell>
 
@@ -302,7 +311,7 @@ const PaginationTable = () => {
                       { label: "All", value: -1 },
                     ]}
                     colSpan={6}
-                    count={quizzess.length}
+                    count={Array.isArray(quizzess) ? quizzess.length : 0}
                     rowsPerPage={rowsPerPage}
                     page={page}
                     SelectProps={{
