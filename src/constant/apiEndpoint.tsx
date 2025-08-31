@@ -35,6 +35,8 @@ interface EnvironmentConfig {
   GET_ACTIVE_USERS: string;
   GET_STRIPE_DATA: string;
   QUIZ_STATS: string;
+  COUPONS: string;
+  CANCEL_SUBSCRIPTION: string;
 }
 
 interface Environments {
@@ -44,7 +46,7 @@ interface Environments {
 
 const _Environments: Environments = {
   development: {
-    BASE_URL: process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000/api/v1/",
+    BASE_URL: process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_DEV_BASE_URL || "http://localhost:3000/api/v1/",
     LOGIN: `auth/login`,
     DASHBOARD_ANALYTICS: `admin/analytics`,
     TEACHERS: `admin/teachers`,
@@ -79,10 +81,12 @@ const _Environments: Environments = {
     ADD_QUIZ: `/quiz/teacher`,
     GET_ACTIVE_USERS: "admin/activeusers",
     GET_STRIPE_DATA: "admin/stripedata",
-    QUIZ_STATS: "admin/quiz-stats"
+    QUIZ_STATS: "admin/quiz-stats",
+    COUPONS: "admin/coupons",
+    CANCEL_SUBSCRIPTION: "payment/cancel-subscription"
   },
   production: {
-    BASE_URL: process.env.NEXT_PUBLIC_BASE_URL || "https://your-production-backend.herokuapp.com/api/v1/",
+    BASE_URL: process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_PROD_BASE_URL || "https://your-production-backend.herokuapp.com/api/v1/",
     LOGIN: `auth/login`,
     DASHBOARD_ANALYTICS: `admin/analytics`,
     TEACHERS: `admin/teachers`,
@@ -117,7 +121,9 @@ const _Environments: Environments = {
     ADD_QUIZ: `/quiz/teacher`,
     GET_ACTIVE_USERS: "admin/activeusers",
     GET_STRIPE_DATA: "admin/stripedata",
-    QUIZ_STATS: "admin/quiz-stats"
+    QUIZ_STATS: "admin/quiz-stats",
+    COUPONS: "admin/coupons",
+    CANCEL_SUBSCRIPTION: "payment/cancel-subscription"
   },
 };
 

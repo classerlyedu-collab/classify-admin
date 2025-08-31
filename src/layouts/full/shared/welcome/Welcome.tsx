@@ -28,7 +28,7 @@ const Welcome = () => {
       <Snackbar
         open={open}
         anchorOrigin={{ vertical: "top", horizontal: "right" }}
-        autoHideDuration={5000}
+        autoHideDuration={process.env.NEXT_PUBLIC_AUTO_HIDE_DURATION || 5000}
         onClose={handleClose}
         sx={{
           mt: 5, // Adjust this value as needed to position below the profile

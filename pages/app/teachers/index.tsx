@@ -35,7 +35,7 @@ const Teachers = () => {
 
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - students.length) : 0;
+    page > 0 && Array.isArray(teachers) ? Math.max(0, (1 + page) * rowsPerPage - teachers.length) : 0;
 
   const handleChangePage = (event: any, newPage: any) => {
     setPage(newPage);
@@ -64,12 +64,13 @@ const Teachers = () => {
     apiRequest
       .get(endPoints.TEACHERS, config)
       .then((response) => {
-        console.log("Response ====>", response);
-        setTeachers(response.data);
+        if (response && response.data) {
+          setTeachers(response.data);
+        }
         setIsloader(false);
       })
       .catch((error) => {
-        console.log("fetchAnalytics ==> " + error);
+        console.log("fetchTeachers error ==> ", error);
         setIsloader(false);
       });
   };
@@ -87,9 +88,9 @@ const Teachers = () => {
         <CircularProgress color="inherit" />
       </Backdrop>
       {/* breadcrumb */}
-      <Breadcrumb title="Students" items={BCrumb} />
+      <Breadcrumb title="Teachers" items={BCrumb} />
       {/* end breadcrumb */}
-      <ParentCard title="Student">
+      <ParentCard title="Teachers">
         <BlankCard>
           <TableContainer>
             <Table
@@ -121,13 +122,21 @@ const Teachers = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {(rowsPerPage > 0
-                  ? teachers?.slice(
+                {!Array.isArray(teachers) || teachers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center">
+                      <Typography variant="body2" color="textSecondary">
+                        {!Array.isArray(teachers) ? "Loading..." : "No teachers found"}
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (rowsPerPage > 0
+                  ? teachers.slice(
                     page * rowsPerPage,
                     page * rowsPerPage + rowsPerPage
                   )
                   : teachers
-                )?.map((row, index) => (
+                ).map((row, index) => (
                   <TableRow key={index}>
                     <TableCell>
                       <Typography variant="subtitle2">{index + 1}</Typography>
@@ -193,7 +202,7 @@ const Teachers = () => {
                       { label: "All", value: -1 },
                     ]}
                     colSpan={6}
-                    count={students.length}
+                    count={Array.isArray(teachers) ? teachers.length : 0}
                     rowsPerPage={rowsPerPage}
                     page={page}
                     SelectProps={{

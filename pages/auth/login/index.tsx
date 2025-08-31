@@ -74,7 +74,10 @@ const Login = () => {
         setIsloader(false);
       })
       .catch((error) => {
-        setError(error);
+        console.error("Login error:", error);
+        // Extract error message - error could be a string or an object
+        const errorMessage = typeof error === 'string' ? error : error?.message || 'Login failed. Please try again.';
+        setError(errorMessage);
         setOpen(true);
         setIsloader(false);
       });

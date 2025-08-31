@@ -10,7 +10,7 @@ interface MapProps {
 function Map({ center, onDrag, draggable }: MapProps) {
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
-    googleMapsApiKey: `AIzaSyCH_vrJ_FXHazau4AAJsmGkvMEfBmsr1_E`,
+    googleMapsApiKey: `process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`,
     // libraries: ["places"],
   });
 

@@ -312,26 +312,26 @@ const StripeUsers = ({ isloader, setIsloader }: any) => {
     try {
       const lastCursor = history[history.length - 1]; // Get last visited cursor
       const newHistory = history.slice(0, -1); // Remove last item from history
-  
+
       const response = await axios.get(
         `${baseUrl}${endPoints.GET_STRIPE_DATA}?ending_before=${lastCursor}`, // Use ending_before
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-  
+
       setSubscribers(response.data.paginated_subscribers);
       setHistory(newHistory); // Update history
       setNextCursor(lastCursor); // Restore nextCursor for forward navigation
       setPrevCursor(newHistory.length > 0 ? newHistory[newHistory.length - 1] : null); // Adjust prevCursor
-  
+
       setIsloader(false);
     } catch (error) {
       setIsloader(false);
       setErrorMessage("Failed to load previous subscribers.");
     }
   };
-  
+
 
   useEffect(() => {
     fetchUserData();
@@ -405,17 +405,17 @@ const StripeUsers = ({ isloader, setIsloader }: any) => {
                       <TableCell>{new Date(sub.current_period_end).toLocaleDateString()}</TableCell>
                       <TableCell>
                         {sub.invoice_pdf ? (
-                           <a
+                          <a
                             href={sub.invoice_pdf}
-                             target="_blank"
-                             rel="noopener noreferrer"
-                           >
-                             View Invoice
-                           </a>
-                         ) : (
-                           "No Invoice"
-                         )}
-                       </TableCell>
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            View Invoice
+                          </a>
+                        ) : (
+                          "No Invoice"
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (

@@ -16,7 +16,7 @@ const RevenueUpdates = () => {
 
   // Sample dataset with timestamps (e.g., daily data for one month)
   const dataSet = [
-    [1000000, 1200000, 1500000, 1400000, 1300000, 1600000, 1700000, 1800000, 1900000, 2000000, 2100000, 2200000], // Teachers
+    [process.env.NEXT_PUBLIC_REVENUE_BASE_VALUE || 1000000, 1200000, 1500000, 1400000, 1300000, 1600000, 1700000, 1800000, 1900000, 2000000, 2100000, 2200000], // Teachers
     [2000000, 2200000, 2300000, 2400000, 2500000, 2600000, 2700000, 2800000, 2900000, 3000000, 3100000, 3200000], // Students
     [1500000, 1600000, 1700000, 1800000, 1900000, 2000000, 2100000, 2200000, 2300000, 2400000, 2500000, 2600000]  // Parents
   ];
@@ -77,7 +77,7 @@ const RevenueUpdates = () => {
         },
         offsetX: 0,
         formatter: function(val: any) {
-          return (val / 1000000).toFixed(2); // Display in millions
+          return (val / process.env.NEXT_PUBLIC_REVENUE_BASE_VALUE || 1000000).toFixed(2); // Display in millions
         },
       },
       axisBorder: {

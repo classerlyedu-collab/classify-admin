@@ -17,7 +17,7 @@ export default class MyDocument extends Document {
           ></link>
           <meta name="emotion-insertion-point" content="" />
           {(this.props as any).emotionStyleTags}
-          <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCH_vrJ_FXHazau4AAJsmGkvMEfBmsr1_E&libraries=places&callback=Function.prototype"></script>
+          <script src="https://maps.googleapis.com/maps/api/js?key=process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY&libraries=places&callback=Function.prototype"></script>
         </Head>
         <body>
           <Main />
