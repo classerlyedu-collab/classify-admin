@@ -21,7 +21,8 @@ import {
   IconUserCheck,
   IconNotes,
   IconChartBar,
-  IconWallet
+  IconWallet,
+  IconBell
 } from "@tabler/icons-react";
 
 
@@ -69,6 +70,12 @@ const Menuitems: MenuitemsType[] = [
     title: "Stripe Subscriptions",
     icon: IconWallet,
     href: "/app/subscriptions",
+  },
+  {
+    id: uniqueId(),
+    title: "Notifications",
+    icon: IconBell,
+    href: "/app/notifications",
   },
   // {
   //   id: uniqueId(),
