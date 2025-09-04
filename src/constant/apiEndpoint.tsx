@@ -37,6 +37,8 @@ interface EnvironmentConfig {
   QUIZ_STATS: string;
   COUPONS: string;
   CANCEL_SUBSCRIPTION: string;
+  NOTIFICATIONS: string;
+  USERS_FOR_NOTIFICATION: string;
 }
 
 interface Environments {
@@ -83,7 +85,9 @@ const _Environments: Environments = {
     GET_STRIPE_DATA: "admin/stripedata",
     QUIZ_STATS: "admin/quiz-stats",
     COUPONS: "admin/coupons",
-    CANCEL_SUBSCRIPTION: "payment/cancel-subscription"
+    CANCEL_SUBSCRIPTION: "payment/cancel-subscription",
+    NOTIFICATIONS: "admin/notifications",
+    USERS_FOR_NOTIFICATION: "admin/users-for-notification"
   },
   production: {
     BASE_URL: process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_PROD_BASE_URL || "https://your-production-backend.herokuapp.com/api/v1/",
@@ -123,7 +127,9 @@ const _Environments: Environments = {
     GET_STRIPE_DATA: "admin/stripedata",
     QUIZ_STATS: "admin/quiz-stats",
     COUPONS: "admin/coupons",
-    CANCEL_SUBSCRIPTION: "payment/cancel-subscription"
+    CANCEL_SUBSCRIPTION: "payment/cancel-subscription",
+    NOTIFICATIONS: "admin/notifications",
+    USERS_FOR_NOTIFICATION: "admin/users-for-notification"
   },
 };
 
