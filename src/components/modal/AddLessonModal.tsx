@@ -4,6 +4,7 @@ import { toast } from "react-hot-toast";
 import apiRequest from "../../../src/utils/axios"; // Assuming axios is set up for API calls
 import endPoints from "../../../src/constant/apiEndpoint";
 import { LessonType } from "../../types/Lesson";
+import { formatLessonTitle } from "../../utils/textFormatter";
 
 const AddLessonModal = ({ open, handleClose, topicId, selectedSubject,
     handleDelete,
@@ -16,7 +17,7 @@ const AddLessonModal = ({ open, handleClose, topicId, selectedSubject,
     // Update state when `selectedSubject` changes
     useEffect(() => {
         if (selectedSubject) {
-            setName(selectedSubject.name || "");
+            setName(formatLessonTitle(selectedSubject.name || ""));
             setContent(selectedSubject.content || "");
             setPages(selectedSubject.pages || 0);
         } else {
@@ -80,14 +81,18 @@ const AddLessonModal = ({ open, handleClose, topicId, selectedSubject,
     return (
         <Modal open={open} onClose={handleClose}>
             <Box sx={{ display: "flex", flexDirection: "column", width: 400, padding: 3, backgroundColor: "white", margin: "auto", marginTop: "100px" }}>
-                <Typography variant="h6" mb={2}>Add New Lesson</Typography>
+                <Typography variant="h6" mb={2}>
+                    {selectedSubject ? "Edit Lesson" : "Add New Lesson"}
+                </Typography>
 
                 <TextField
                     label="Lesson Name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
+                    onBlur={(e) => setName(formatLessonTitle(e.target.value))}
                     fullWidth
                     margin="normal"
+                    placeholder="Enter lesson name in sentence case"
                 />
 
                 <TextField
