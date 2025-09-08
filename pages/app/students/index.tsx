@@ -33,6 +33,7 @@ import { useRouter } from "next/router";
 import apiRequest from "../../../src/utils/axios";
 import endPoints from "../../../src/constant/apiEndpoint";
 import { Students } from "../../../src/types/students";
+import TabSearchBar from "../../../src/components/common/TabSearchBar";
 
 interface TablePaginationActionsProps {
   count: number;
@@ -121,13 +122,19 @@ const PaginationTable = () => {
   const [isLoader, setIsloader] = React.useState(false);
 
   const [students, setStudents] = React.useState<Students[]>([]);
+  const [filteredStudents, setFilteredStudents] = React.useState<Students[]>([]);
 
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
 
+  // Update filtered students when students change
+  React.useEffect(() => {
+    setFilteredStudents(students);
+  }, [students]);
+
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
-    page > 0 && Array.isArray(students) ? Math.max(0, (1 + page) * rowsPerPage - students.length) : 0;
+    page > 0 && Array.isArray(filteredStudents) ? Math.max(0, (1 + page) * rowsPerPage - filteredStudents.length) : 0;
 
   const handleChangePage = (event: any, newPage: any) => {
     setPage(newPage);
@@ -182,6 +189,18 @@ const PaginationTable = () => {
       <Breadcrumb title="Students" items={BCrumb} />
       {/* end breadcrumb */}
       <ParentCard title="Student">
+        {/* Search Bar */}
+        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
+          <TabSearchBar
+            placeholder="Search students by name or email..."
+            data={students}
+            searchFields={['auth.fullName', 'auth.email']}
+            onResultClick={(result) => router.push(`/app/students/${result.data._id}`)}
+            onFilterChange={setFilteredStudents}
+            maxResults={5}
+          />
+        </Box>
+
         <BlankCard>
           <TableContainer>
             <Table
@@ -213,22 +232,22 @@ const PaginationTable = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {!Array.isArray(students) || students.length === 0 ? (
+                {!Array.isArray(filteredStudents) || filteredStudents.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} align="center">
                       <Typography variant="body2" color="textSecondary">
-                        {!Array.isArray(students) ? "Loading..." : "No students found"}
+                        {!Array.isArray(filteredStudents) ? "Loading..." : "No students found"}
                       </Typography>
                     </TableCell>
                   </TableRow>
                 ) : (rowsPerPage > 0
-                  ? students
+                  ? filteredStudents
                     .sort((a, b) => (a?.code > b?.code ? -1 : 1))
                     .slice(
                       page * rowsPerPage,
                       page * rowsPerPage + rowsPerPage
                     )
-                  : students.sort((a, b) => (a?.code > b?.code ? -1 : 1))
+                  : filteredStudents.sort((a, b) => (a?.code > b?.code ? -1 : 1))
                 ).map((row) => (
                   <TableRow key={row?.code}>
                     <TableCell>
@@ -295,7 +314,7 @@ const PaginationTable = () => {
                       { label: "All", value: -1 },
                     ]}
                     colSpan={6}
-                    count={Array.isArray(students) ? students.length : 0}
+                    count={Array.isArray(filteredStudents) ? filteredStudents.length : 0}
                     rowsPerPage={rowsPerPage}
                     page={page}
                     SelectProps={{

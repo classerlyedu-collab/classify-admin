@@ -13,6 +13,7 @@ import { IconEdit } from "@tabler/icons-react";
 import BlankCard from "../../../src/components/shared/BlankCard";
 import students from "../students";
 import { TeacherType } from "../../../src/types/teachers";
+import TabSearchBar from "../../../src/components/common/TabSearchBar";
 
 const BCrumb = [
   {
@@ -29,13 +30,19 @@ const Teachers = () => {
 
   const [isLoader, setIsloader] = React.useState(false);
   const [teachers, setTeachers] = useState<TeacherType[] | []>([]);
+  const [filteredTeachers, setFilteredTeachers] = useState<TeacherType[] | []>([]);
 
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
 
+  // Update filtered teachers when teachers change
+  useEffect(() => {
+    setFilteredTeachers(teachers);
+  }, [teachers]);
+
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
-    page > 0 && Array.isArray(teachers) ? Math.max(0, (1 + page) * rowsPerPage - teachers.length) : 0;
+    page > 0 && Array.isArray(filteredTeachers) ? Math.max(0, (1 + page) * rowsPerPage - filteredTeachers.length) : 0;
 
   const handleChangePage = (event: any, newPage: any) => {
     setPage(newPage);
@@ -91,6 +98,18 @@ const Teachers = () => {
       <Breadcrumb title="Teachers" items={BCrumb} />
       {/* end breadcrumb */}
       <ParentCard title="Teachers">
+        {/* Search Bar */}
+        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
+          <TabSearchBar
+            placeholder="Search teachers by name or email..."
+            data={teachers}
+            searchFields={['auth.fullName', 'auth.email']}
+            onResultClick={(result) => router.push(`/app/teachers/${result.data._id}`)}
+            onFilterChange={setFilteredTeachers}
+            maxResults={5}
+          />
+        </Box>
+
         <BlankCard>
           <TableContainer>
             <Table
@@ -122,20 +141,20 @@ const Teachers = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {!Array.isArray(teachers) || teachers.length === 0 ? (
+                {!Array.isArray(filteredTeachers) || filteredTeachers.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} align="center">
                       <Typography variant="body2" color="textSecondary">
-                        {!Array.isArray(teachers) ? "Loading..." : "No teachers found"}
+                        {!Array.isArray(filteredTeachers) ? "Loading..." : "No teachers found"}
                       </Typography>
                     </TableCell>
                   </TableRow>
                 ) : (rowsPerPage > 0
-                  ? teachers.slice(
+                  ? filteredTeachers.slice(
                     page * rowsPerPage,
                     page * rowsPerPage + rowsPerPage
                   )
-                  : teachers
+                  : filteredTeachers
                 ).map((row, index) => (
                   <TableRow key={index}>
                     <TableCell>
@@ -202,7 +221,7 @@ const Teachers = () => {
                       { label: "All", value: -1 },
                     ]}
                     colSpan={6}
-                    count={Array.isArray(teachers) ? teachers.length : 0}
+                    count={Array.isArray(filteredTeachers) ? filteredTeachers.length : 0}
                     rowsPerPage={rowsPerPage}
                     page={page}
                     SelectProps={{

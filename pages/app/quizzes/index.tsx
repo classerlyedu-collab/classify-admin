@@ -29,6 +29,7 @@ import { useRouter } from "next/router";
 import endPoints from "../../../src/constant/apiEndpoint";
 import apiRequest from "../../../src/utils/axios";
 import { QuizType } from "../../../src/types/Quiz";
+import TabSearchBar from "../../../src/components/common/TabSearchBar";
 
 interface TablePaginationActionsProps {
   count: number;
@@ -116,14 +117,22 @@ const PaginationTable = () => {
   const [isLoader, setIsloader] = React.useState(false);
 
   const [quizzess, setQuizzess] = React.useState<QuizType[]>([]);
+  const [filteredQuizzes, setFilteredQuizzes] = React.useState<QuizType[]>([]);
+  const [isFetching, setIsFetching] = React.useState(false);
+
 
   const router = useRouter();
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
 
+  // Update filtered quizzes when quizzes change
+  React.useEffect(() => {
+    setFilteredQuizzes(quizzess);
+  }, [quizzess]);
+
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
-    page > 0 && Array.isArray(quizzess) ? Math.max(0, (1 + page) * rowsPerPage - quizzess.length) : 0;
+    page > 0 && Array.isArray(filteredQuizzes) ? Math.max(0, (1 + page) * rowsPerPage - filteredQuizzes.length) : 0;
 
   const handleChangePage = (event: any, newPage: any) => {
     setPage(newPage);
@@ -135,36 +144,54 @@ const PaginationTable = () => {
   };
 
   const fetchQuizzess = () => {
+    // Prevent multiple simultaneous requests
+    if (isFetching) {
+      console.log('Already fetching quizzes, skipping...');
+      return;
+    }
+
+    setIsFetching(true);
     setIsloader(true);
 
     const token = typeof window !== "undefined" ? window.localStorage?.getItem('authToken') : null;
     if (!token) {
       router.push('/');
       setIsloader(false);
+      setIsFetching(false);
       return; // Exit if no token is available
     };
 
     const config = {
       headers: { Authorization: `Bearer ${token}` }
+      // Removed timeout to prevent premature failures
     };
+
+    const startTime = Date.now();
 
     apiRequest
       .get(endPoints.QUIZZES, config)
       .then((response) => {
+        const endTime = Date.now();
+        console.log(`Quizzes fetched in ${endTime - startTime}ms`);
+
         if (response && response.data) {
           setQuizzess(response.data);
         }
         setIsloader(false);
+        setIsFetching(false);
       })
       .catch((error) => {
-        console.log("fetchQuizzes error ==> ", error);
+        const endTime = Date.now();
+        console.error(`fetchQuizzes error after ${endTime - startTime}ms:`, error);
+
         setIsloader(false);
+        setIsFetching(false);
       });
   };
 
   React.useEffect(() => {
     fetchQuizzess();
-  }, []);
+  }, []); // Empty dependency array to run only once
 
 
   return (
@@ -186,6 +213,18 @@ const PaginationTable = () => {
       />
       {/* end breadcrumb */}
       <ParentCard title="Quizzes">
+        {/* Search Bar */}
+        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
+          <TabSearchBar
+            placeholder="Search quizzes by name, subject, or topic..."
+            data={quizzess}
+            searchFields={['name', 'subject.name', 'topic.name']}
+            onResultClick={(result) => router.push(`/app/quizzes/${result.data._id}`)}
+            onFilterChange={setFilteredQuizzes}
+            maxResults={5}
+          />
+        </Box>
+
         <BlankCard>
           <TableContainer>
             <Table
@@ -220,21 +259,21 @@ const PaginationTable = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {!Array.isArray(quizzess) || quizzess.length === 0 ? (
+                {!Array.isArray(filteredQuizzes) || filteredQuizzes.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} align="center">
                       <Typography variant="body2" color="textSecondary">
-                        {!Array.isArray(quizzess) ? "Loading..." : "No quizzes found"}
+                        {!Array.isArray(filteredQuizzes) ? "Loading..." : "No quizzes found"}
                       </Typography>
                     </TableCell>
                   </TableRow>
                 ) : (rowsPerPage > 0
-                  ? quizzess
+                  ? filteredQuizzes
                     .slice(
                       page * rowsPerPage,
                       page * rowsPerPage + rowsPerPage
                     )
-                  : quizzess.sort((a, b) => (a?.type > b?.type ? -1 : 1))
+                  : filteredQuizzes.sort((a, b) => (a?.type > b?.type ? -1 : 1))
                 ).map((row, index) => (
                   <TableRow key={row._id}>
                     <TableCell>
@@ -311,7 +350,7 @@ const PaginationTable = () => {
                       { label: "All", value: -1 },
                     ]}
                     colSpan={6}
-                    count={Array.isArray(quizzess) ? quizzess.length : 0}
+                    count={Array.isArray(filteredQuizzes) ? filteredQuizzes.length : 0}
                     rowsPerPage={rowsPerPage}
                     page={page}
                     SelectProps={{

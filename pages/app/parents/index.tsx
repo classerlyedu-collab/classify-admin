@@ -32,6 +32,7 @@ import apiRequest from "../../../src/utils/axios";
 
 import Image from "next/image";
 import { ParentType } from "../../../src/types/Parents";
+import TabSearchBar from "../../../src/components/common/TabSearchBar";
 
 interface TablePaginationActionsProps {
   count: number;
@@ -119,15 +120,20 @@ const PaginationTable = () => {
   const [isLoader, setIsloader] = React.useState(false);
 
   const [parentsData, setParentsData] = React.useState<ParentType[]>([]);
-
+  const [filteredParents, setFilteredParents] = React.useState<ParentType[]>([]);
 
   const router = useRouter();
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
 
+  // Update filtered parents when parents data changes
+  React.useEffect(() => {
+    setFilteredParents(parentsData);
+  }, [parentsData]);
+
   // Avoid a layout jump when reaching the last page with empty data.
   const emptyRows =
-    page > 0 && Array.isArray(parentsData) ? Math.max(0, (1 + page) * rowsPerPage - parentsData.length) : 0;
+    page > 0 && Array.isArray(filteredParents) ? Math.max(0, (1 + page) * rowsPerPage - filteredParents.length) : 0;
 
   const handleChangePage = (event: any, newPage: any) => {
     setPage(newPage);
@@ -188,6 +194,18 @@ const PaginationTable = () => {
       />
       {/* end breadcrumb */}
       <ParentCard title="Licensee">
+        {/* Search Bar */}
+        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
+          <TabSearchBar
+            placeholder="Search parents by name or email..."
+            data={parentsData}
+            searchFields={['auth.fullName', 'auth.email']}
+            onResultClick={(result) => router.push(`/app/parents/${result.data._id}`)}
+            onFilterChange={setFilteredParents}
+            maxResults={5}
+          />
+        </Box>
+
         <BlankCard>
           <TableContainer>
             <Table
@@ -219,22 +237,22 @@ const PaginationTable = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {!Array.isArray(parentsData) || parentsData.length === 0 ? (
+                {!Array.isArray(filteredParents) || filteredParents.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} align="center">
                       <Typography variant="body2" color="textSecondary">
-                        {!Array.isArray(parentsData) ? "Loading..." : "No parents found"}
+                        {!Array.isArray(filteredParents) ? "Loading..." : "No parents found"}
                       </Typography>
                     </TableCell>
                   </TableRow>
                 ) : (rowsPerPage > 0
-                  ? parentsData
+                  ? filteredParents
                     .sort((a, b) => (a.code > b.code ? -1 : 1))
                     .slice(
                       page * rowsPerPage,
                       page * rowsPerPage + rowsPerPage
                     )
-                  : parentsData.sort((a, b) => (a.code > b.code ? -1 : 1))
+                  : filteredParents.sort((a, b) => (a.code > b.code ? -1 : 1))
                 ).map((row) => (
                   <TableRow key={row.code}>
                     <TableCell>
@@ -303,7 +321,7 @@ const PaginationTable = () => {
                       { label: "All", value: -1 },
                     ]}
                     colSpan={6}
-                    count={Array.isArray(parentsData) ? parentsData.length : 0}
+                    count={Array.isArray(filteredParents) ? filteredParents.length : 0}
                     rowsPerPage={rowsPerPage}
                     page={page}
                     SelectProps={{

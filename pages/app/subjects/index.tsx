@@ -30,6 +30,7 @@ import endPoints from "../../../src/constant/apiEndpoint";
 import apiRequest from "../../../src/utils/axios";
 import { SubjectType } from "../../../src/types/Subjects";
 import EditDeleteModal from "../../../src/components/modal/EditSubjectModal";
+import TabSearchBar from "../../../src/components/common/TabSearchBar";
 import toast from "react-hot-toast";
 
 interface TablePaginationActionsProps {
@@ -118,6 +119,7 @@ const PaginationTable = () => {
   const [isLoader, setIsloader] = React.useState(false);
 
   const [subjects, setSubjects] = React.useState<SubjectType[]>([]);
+  const [filteredSubjects, setFilteredSubjects] = React.useState<SubjectType[]>([]);
 
   const router = useRouter();
   const [page, setPage] = React.useState(0);
@@ -125,9 +127,14 @@ const PaginationTable = () => {
   const [openModal, setOpenModal] = React.useState(false);
   const [selectedSubject, setSelectedSubject] = React.useState<SubjectType | null>(null);
 
+  // Update filtered subjects when subjects change
+  React.useEffect(() => {
+    setFilteredSubjects(subjects);
+  }, [subjects]);
+
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
-    page > 0 && Array.isArray(subjects) ? Math.max(0, (1 + page) * rowsPerPage - subjects.length) : 0;
+    page > 0 && Array.isArray(filteredSubjects) ? Math.max(0, (1 + page) * rowsPerPage - filteredSubjects.length) : 0;
 
   const handleChangePage = (event: any, newPage: any) => {
     setPage(newPage);
@@ -212,6 +219,11 @@ const PaginationTable = () => {
     setSelectedSubject(null);
   };
 
+  const handleSearchResultClick = (result: any) => {
+    // Navigate to the subject's topics page
+    router.push(`/app/subjects/${result.data._id}`);
+  };
+
   return (
     <PageContainer>
       <Backdrop
@@ -231,6 +243,17 @@ const PaginationTable = () => {
       />
       {/* end breadcrumb */}
       <ParentCard title="Subjects">
+        {/* Search Bar */}
+        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
+          <TabSearchBar
+            placeholder="Search subjects by name or grade..."
+            data={subjects}
+            searchFields={['name', 'grade.grade']}
+            onResultClick={handleSearchResultClick}
+            maxResults={5}
+          />
+        </Box>
+
         <BlankCard>
           <TableContainer>
             <Table
@@ -262,21 +285,21 @@ const PaginationTable = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {!Array.isArray(subjects) || subjects.length === 0 ? (
+                {!Array.isArray(filteredSubjects) || filteredSubjects.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} align="center">
                       <Typography variant="body2" color="textSecondary">
-                        {!Array.isArray(subjects) ? "Loading..." : "No subjects found"}
+                        {!Array.isArray(filteredSubjects) ? "Loading..." : "No subjects found"}
                       </Typography>
                     </TableCell>
                   </TableRow>
                 ) : (rowsPerPage > 0
-                  ? subjects
+                  ? filteredSubjects
                     .slice(
                       page * rowsPerPage,
                       page * rowsPerPage + rowsPerPage
                     )
-                  : subjects.sort((a, b) => (a?.name > b?.name ? -1 : 1))
+                  : filteredSubjects.sort((a, b) => (a?.name > b?.name ? -1 : 1))
                 ).map((row) => (
                   <TableRow key={row._id}>
                     <TableCell>
@@ -351,7 +374,7 @@ const PaginationTable = () => {
                       { label: "All", value: -1 },
                     ]}
                     colSpan={6}
-                    count={Array.isArray(subjects) ? subjects.length : 0}
+                    count={Array.isArray(filteredSubjects) ? filteredSubjects.length : 0}
                     rowsPerPage={rowsPerPage}
                     page={page}
                     SelectProps={{

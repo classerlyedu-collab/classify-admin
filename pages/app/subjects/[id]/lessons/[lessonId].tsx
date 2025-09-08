@@ -31,6 +31,7 @@ import apiRequest from "../../../../../src/utils/axios";
 import { LessonType } from "../../../../../src/types/Lesson";
 import AddLessonModal from "../../../../../src/components/modal/AddLessonModal";
 import toast from "react-hot-toast";
+import { formatLessonTitle } from "../../../../../src/utils/textFormatter";
 
 interface TablePaginationActionsProps {
     count: number;
@@ -186,7 +187,7 @@ const PaginationTable = ({ id, lessonId }: { id: string, lessonId: string }) => 
         setOpenModal(true);
     };
 
-    const handleEdit = (lessonId:any, name:any, content:any, pages:any, lang:any) => {
+    const handleEdit = (lessonId: any, name: any, content: any, pages: any, lang: any) => {
         const token = typeof window !== "undefined" ? window.localStorage.getItem("authToken") : null;
         if (!token) {
             toast.error("Unauthorized request. Please login.");
@@ -294,7 +295,7 @@ const PaginationTable = ({ id, lessonId }: { id: string, lessonId: string }) => 
                                                 variant="h6"
                                                 fontWeight="400"
                                             >
-                                                {row?.name}
+                                                {formatLessonTitle(row?.name)}
                                             </Typography>
                                         </TableCell>
 

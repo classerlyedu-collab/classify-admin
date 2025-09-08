@@ -30,6 +30,7 @@ import endPoints from "../../../src/constant/apiEndpoint";
 import apiRequest from "../../../src/utils/axios";
 import { TopicType } from "../../../src/types/topics";
 import AddTopicModal from "../../../src/components/modal/AddTopicModal";
+import TabSearchBar from "../../../src/components/common/TabSearchBar";
 import toast from "react-hot-toast";
 
 interface TablePaginationActionsProps {
@@ -118,15 +119,21 @@ const PaginationTable = ({ query }: { query: string }) => {
   const [isLoader, setIsloader] = React.useState(false);
   const [openModal, setOpenModal] = React.useState(false);
   const [subjects, setSubjects] = React.useState<TopicType[]>([]);
+  const [filteredSubjects, setFilteredSubjects] = React.useState<TopicType[]>([]);
   const [selectedSubject, setSelectedSubject] = React.useState<TopicType | null>(null);
 
   const router = useRouter();
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
 
+  // Update filtered subjects when subjects change
+  React.useEffect(() => {
+    setFilteredSubjects(subjects);
+  }, [subjects]);
+
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - subjects.length) : 0;
+    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - filteredSubjects.length) : 0;
 
   const handleChangePage = (event: any, newPage: any) => {
     setPage(newPage);
@@ -225,6 +232,10 @@ const PaginationTable = ({ query }: { query: string }) => {
       });
   };
 
+  const handleSearchResultClick = (result: any) => {
+    // Navigate to the topic's lessons page
+    router.push(`/app/subjects/${query}/lessons/${result.data._id}`);
+  };
 
   return (
     <PageContainer>
@@ -246,6 +257,17 @@ const PaginationTable = ({ query }: { query: string }) => {
       />
       {/* end breadcrumb */}
       <ParentCard title="Subjects">
+        {/* Search Bar */}
+        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
+          <TabSearchBar
+            placeholder="Search topics by name..."
+            data={subjects}
+            searchFields={['name']}
+            onResultClick={handleSearchResultClick}
+            maxResults={5}
+          />
+        </Box>
+
         <BlankCard>
           <TableContainer>
             <Table
@@ -274,13 +296,21 @@ const PaginationTable = ({ query }: { query: string }) => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {(rowsPerPage > 0
-                  ? subjects
+                {filteredSubjects.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} align="center">
+                      <Typography variant="body2" color="textSecondary">
+                        No topics found
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (rowsPerPage > 0
+                  ? filteredSubjects
                     .slice(
                       page * rowsPerPage,
                       page * rowsPerPage + rowsPerPage
                     )
-                  : subjects?.sort((a, b) => (a?.name > b?.name ? -1 : 1))
+                  : filteredSubjects?.sort((a, b) => (a?.name > b?.name ? -1 : 1))
                 ).map((row) => (
                   <TableRow key={row._id}>
                     <TableCell>
@@ -354,7 +384,7 @@ const PaginationTable = ({ query }: { query: string }) => {
                       { label: "All", value: -1 },
                     ]}
                     colSpan={6}
-                    count={subjects.length}
+                    count={filteredSubjects.length}
                     rowsPerPage={rowsPerPage}
                     page={page}
                     SelectProps={{

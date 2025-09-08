@@ -31,6 +31,7 @@ import Breadcrumb from '../../../src/layouts/full/shared/breadcrumb/Breadcrumb';
 import { Backdrop, CircularProgress } from '@mui/material';
 import apiRequest from '../../../src/utils/axios';
 import endPoints from '../../../src/constant/apiEndpoint';
+import TabSearchBar from '../../../src/components/common/TabSearchBar';
 
 interface User {
   _id: string;
@@ -55,6 +56,7 @@ interface User {
 const SubscriptionsPage = () => {
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [isLoader, setIsLoader] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -112,6 +114,11 @@ const SubscriptionsPage = () => {
       setIsLoader(false);
     }
   };
+
+  // Update filtered users when users change
+  useEffect(() => {
+    setFilteredUsers(users);
+  }, [users]);
 
   const handleGrantAccess = async () => {
     if (!selectedUser) return;
@@ -243,6 +250,21 @@ const SubscriptionsPage = () => {
       <Breadcrumb title="User Subscriptions" items={BCrumb} />
 
       <ParentCard title="Manage User Subscriptions">
+        {/* Search Bar */}
+        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
+          <TabSearchBar
+            placeholder="Search users by name or email..."
+            data={users}
+            searchFields={['auth.fullName', 'auth.email']}
+            onResultClick={(result) => {
+              // For subscriptions, we don't navigate, just filter
+              console.log('Selected user:', result.data);
+            }}
+            onFilterChange={setFilteredUsers}
+            maxResults={5}
+          />
+        </Box>
+
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
@@ -266,7 +288,7 @@ const SubscriptionsPage = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {users.map((user) => (
+                  {filteredUsers.map((user) => (
                     <TableRow key={user._id}>
                       <TableCell>
                         <Typography variant="subtitle2" fontWeight="600">
