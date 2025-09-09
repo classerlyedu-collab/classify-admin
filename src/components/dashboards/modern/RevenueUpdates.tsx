@@ -5,47 +5,96 @@ const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 import { useTheme } from '@mui/material/styles';
 import { Grid } from '@mui/material';
 import DashboardCard from '../../shared/DashboardCard';
+import apiRequest from '../../../utils/axios';
+import endPoints from '../../../constant/apiEndpoint';
 
 const RevenueUpdates = () => {
-  const [month, setMonth] = React.useState('1');
-
   // chart color
   const theme = useTheme();
   const primary = theme.palette.primary.main;
   const secondary = theme.palette.secondary.main;
+  const success = theme.palette.success.main;
+  // Build last 12 months labels and keys
+  const monthsBack = 12;
+  const labels = React.useMemo(() => {
+    const now = moment().startOf('month');
+    const arr: string[] = [];
+    for (let i = monthsBack - 1; i >= 0; i--) {
+      arr.push(moment(now).subtract(i, 'months').format('MMM YYYY'));
+    }
+    return arr;
+  }, []);
 
-  // Sample dataset with timestamps (e.g., daily data for one month)
-  const dataSet = [
-    [process.env.NEXT_PUBLIC_REVENUE_BASE_VALUE || 1000000, 1200000, 1500000, 1400000, 1300000, 1600000, 1700000, 1800000, 1900000, 2000000, 2100000, 2200000], // Teachers
-    [2000000, 2200000, 2300000, 2400000, 2500000, 2600000, 2700000, 2800000, 2900000, 3000000, 3100000, 3200000], // Students
-    [1500000, 1600000, 1700000, 1800000, 1900000, 2000000, 2100000, 2200000, 2300000, 2400000, 2500000, 2600000]  // Parents
-  ];
+  const monthKeys = React.useMemo(() => {
+    const now = moment().startOf('month');
+    const arr: string[] = [];
+    for (let i = monthsBack - 1; i >= 0; i--) {
+      arr.push(moment(now).subtract(i, 'months').format('YYYY-MM'));
+    }
+    return arr;
+  }, []);
 
-  // Generating dummy timestamps for the x-axis
-  const dateStart = new Date("2023-01-01").getTime();
-  const dateEnd = new Date("2023-01-12").getTime();
-  const timestamps = [];
-  
-  for (let i = 0; i < 12; i++) {
-    timestamps.push(dateStart + i * (dateEnd - dateStart) / 11); // 11 intervals for 12 points
-  }
+  const [series, setSeries] = React.useState(
+    [
+      { name: 'Teachers', data: Array(monthsBack).fill(0) },
+      { name: 'Students', data: Array(monthsBack).fill(0) },
+      { name: 'Parents', data: Array(monthsBack).fill(0) },
+    ] as { name: string; data: number[] }[]
+  );
+
+  const extractCreatedAt = (item: any): string | undefined => {
+    return item?.createdAt || item?.auth?.createdAt || item?.updatedAt || undefined;
+  };
+
+  const bucketByMonth = (items: any[], keys: string[]): number[] => {
+    const counts: Record<string, number> = Object.fromEntries(keys.map((k) => [k, 0]));
+    for (const it of items) {
+      const created = extractCreatedAt(it);
+      if (!created) continue;
+      const key = moment(created).startOf('month').format('YYYY-MM');
+      if (counts[key] !== undefined) counts[key] += 1;
+    }
+    return keys.map((k) => counts[k] || 0);
+  };
+
+  React.useEffect(() => {
+    const token = typeof window !== 'undefined' ? window.localStorage?.getItem('authToken') : null;
+    if (!token) return;
+    const config = { headers: { Authorization: `Bearer ${token}` } };
+
+    const fetchAll = async () => {
+      try {
+        const [tRes, sRes, pRes] = await Promise.all([
+          apiRequest.get(endPoints.TEACHERS, config),
+          apiRequest.get(endPoints.STUDENTS, config),
+          apiRequest.get(endPoints.PARENTS, config),
+        ]);
+
+        const teachers = Array.isArray(tRes?.data) ? tRes.data : tRes?.data?.data || [];
+        const students = Array.isArray(sRes?.data) ? sRes.data : sRes?.data?.data || [];
+        const parents = Array.isArray(pRes?.data) ? pRes.data : pRes?.data?.data || [];
+
+        const toNums = (arr: number[]) => arr.map((v) => (Number.isFinite(v) ? Number(v) : 0));
+        const teacherSeries = toNums(bucketByMonth(teachers, monthKeys));
+        const studentSeries = toNums(bucketByMonth(students, monthKeys));
+        const parentSeries = toNums(bucketByMonth(parents, monthKeys));
+
+        setSeries([
+          { name: 'Teachers', data: teacherSeries },
+          { name: 'Students', data: studentSeries },
+          { name: 'Parents', data: parentSeries },
+        ]);
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('Overview fetch error:', e);
+      }
+    };
+
+    fetchAll();
+  }, [monthKeys]);
 
   // chart options for the area chart
   const options = {
-    series: [
-      {
-        name: 'Teachers',
-        data: dataSet[0],
-      },
-      {
-        name: 'Students',
-        data: dataSet[1],
-      },
-      {
-        name: 'Parents',
-        data: dataSet[2],
-      },
-    ],
     chart: {
       type: 'area',
       stacked: false,
@@ -54,6 +103,7 @@ const RevenueUpdates = () => {
         enabled: false,
       },
     },
+    colors: [primary, secondary, success],
     dataLabels: {
       enabled: false,
     },
@@ -76,8 +126,9 @@ const RevenueUpdates = () => {
           colors: '#8e8da4',
         },
         offsetX: 0,
-        formatter: function(val: any) {
-          return (val / process.env.NEXT_PUBLIC_REVENUE_BASE_VALUE || 1000000).toFixed(2); // Display in millions
+        formatter: function (val: any) {
+          const n = Number(val);
+          return Number.isFinite(n) ? `${n}` : '0';
         },
       },
       axisBorder: {
@@ -88,19 +139,15 @@ const RevenueUpdates = () => {
       },
     },
     xaxis: {
-      type: 'datetime',
-      categories: timestamps.map((timestamp) => moment(timestamp).format("YYYY-MM-DD")), // Format for x-axis labels
-      tickAmount: 12,
+      type: 'category',
+      categories: labels,
       labels: {
         rotate: -10,
         rotateAlways: true,
-        formatter: function(val: any, timestamp: any) {
-          return moment(new Date(timestamp)).format("DD MMM YYYY"); // Format for the tooltip
-        },
       },
     },
     title: {
-      text: 'Users Update',
+      text: 'Overview',
       align: 'left',
       offsetX: 14,
     },
@@ -109,7 +156,6 @@ const RevenueUpdates = () => {
     },
     legend: {
       position: 'top',
-      horizontalAlign: 'right',
       offsetX: -10,
     },
   };
@@ -121,7 +167,7 @@ const RevenueUpdates = () => {
         <Grid item xs={12}>
           <Chart
             options={options as any}
-            series={options.series}
+            series={series as any}
             type="area"
             height={350}
             width={"100%"}

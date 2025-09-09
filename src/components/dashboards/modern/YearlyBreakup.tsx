@@ -17,7 +17,7 @@ interface QuizStats {
 
 interface YearlyBreakupProps {
   quizStats: QuizStats;
-  onRefetch: (subjectId?: string) => void;
+  onRefetch: (subjectId?: string, gradeId?: string) => void;
 }
 
 interface Grade {
@@ -42,6 +42,7 @@ const YearlyBreakup = ({ quizStats, onRefetch }: YearlyBreakupProps) => {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [selectedGrade, setSelectedGrade] = useState<Grade | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
+  const [initialFetched, setInitialFetched] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const fetchGrades = async () => {
@@ -49,7 +50,7 @@ const YearlyBreakup = ({ quizStats, onRefetch }: YearlyBreakupProps) => {
     try {
       const token = typeof window !== "undefined" ? window.localStorage.getItem("authToken") : null;
       if (!token) return;
-      
+
       const config = { headers: { Authorization: `Bearer ${token}` } };
       const { data } = await apiRequest.get(endPoints.GET_ALL_GRADES, config);
       setGrades(data);
@@ -65,7 +66,7 @@ const YearlyBreakup = ({ quizStats, onRefetch }: YearlyBreakupProps) => {
     try {
       const token = typeof window !== "undefined" ? window.localStorage.getItem("authToken") : null;
       if (!token) return;
-      
+
       const config = { headers: { Authorization: `Bearer ${token}` } };
       const { data } = await apiRequest.get(`${endPoints.GET_SUBJECTS_BY_GRADE}${gradeId}`, config);
       setSubjects(data);
@@ -82,6 +83,14 @@ const YearlyBreakup = ({ quizStats, onRefetch }: YearlyBreakupProps) => {
     }
   }, [openDialog]);
 
+  // On first mount, fetch overall stats once
+  useEffect(() => {
+    if (!initialFetched) {
+      onRefetch(undefined, undefined);
+      setInitialFetched(true);
+    }
+  }, [initialFetched, onRefetch]);
+
   useEffect(() => {
     if (selectedGrade) {
       fetchSubjects(selectedGrade._id);
@@ -94,9 +103,42 @@ const YearlyBreakup = ({ quizStats, onRefetch }: YearlyBreakupProps) => {
 
   const handleSubjectClick = (subject: Subject) => {
     setSelectedSubject(subject);
-    onRefetch(subject._id);
+    const subjectId = (subject as any)?._id || (subject as any)?.id || (subject as any)?.subjectId;
+    const gradeId = (selectedGrade as any)?._id || (selectedGrade as any)?.id || (selectedGrade as any)?.gradeId;
+    if (subjectId) {
+      onRefetch(subjectId as any, gradeId as any);
+    }
     setOpenDialog(false);
   };
+
+  // Helpers to ensure valid numeric percentages for charts
+  const clamp01 = (n: number) => (Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : 0);
+  const parsePercent = (value?: string | number) => {
+    if (typeof value === 'number') return clamp01(value);
+    if (typeof value === 'string') {
+      const cleaned = value.replace(/[^0-9.\-]/g, '');
+      const num = parseFloat(cleaned);
+      return clamp01(num);
+    }
+    return 0;
+  };
+  const computeFromCounts = (count?: number, total?: number) => {
+    if (!total || !Number.isFinite(total) || total <= 0) return 0;
+    const c = Number(count) || 0;
+    return clamp01((c / total) * 100);
+  };
+
+  const passValue = (() => {
+    const parsed = parsePercent((quizStats as any)?.passPercentage);
+    if (parsed > 0) return parsed;
+    return computeFromCounts((quizStats as any)?.passCount, (quizStats as any)?.totalQuizzes);
+  })();
+
+  const failValue = (() => {
+    const parsed = parsePercent((quizStats as any)?.failPercentage);
+    if (parsed > 0) return parsed;
+    return computeFromCounts((quizStats as any)?.failCount, (quizStats as any)?.totalQuizzes);
+  })();
 
   const chartOptions = {
     chart: {
@@ -198,9 +240,9 @@ const YearlyBreakup = ({ quizStats, onRefetch }: YearlyBreakupProps) => {
   };
 
   return (
-    <Box sx={{ 
-      backgroundColor: '#fff', 
-      borderRadius: '10px', 
+    <Box sx={{
+      backgroundColor: '#fff',
+      borderRadius: '10px',
       boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)',
       p: 2,
       height: '100%'
@@ -211,9 +253,9 @@ const YearlyBreakup = ({ quizStats, onRefetch }: YearlyBreakupProps) => {
             Quiz Performance
           </Typography>
           {selectedSubject && (
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+            <Box sx={{
+              display: 'flex',
+              alignItems: 'center',
               mt: 0.5,
               backgroundColor: '#e8eaf6',
               borderRadius: '4px',
@@ -221,9 +263,9 @@ const YearlyBreakup = ({ quizStats, onRefetch }: YearlyBreakupProps) => {
               py: 0.5,
               width: 'fit-content'
             }}>
-              <Typography 
-                variant="subtitle2" 
-                sx={{ 
+              <Typography
+                variant="subtitle2"
+                sx={{
                   color: '#3949ab',
                   fontWeight: 500,
                   display: 'flex',
@@ -237,9 +279,9 @@ const YearlyBreakup = ({ quizStats, onRefetch }: YearlyBreakupProps) => {
             </Box>
           )}
         </Box>
-        <IconButton 
+        <IconButton
           onClick={() => setOpenDialog(true)}
-          sx={{ 
+          sx={{
             backgroundColor: '#f5f5f5',
             '&:hover': { backgroundColor: '#e0e0e0' }
           }}
@@ -248,62 +290,47 @@ const YearlyBreakup = ({ quizStats, onRefetch }: YearlyBreakupProps) => {
         </IconButton>
       </Box>
 
-      {selectedSubject ? (
-        <>
-          <Grid container spacing={2}>
-            <Grid item xs={6}>
-              <Box sx={{ textAlign: 'center' }}>
-                <Typography variant="subtitle2" sx={{ mb: 1, color: '#4CAF50' }}>
-                  Pass Rate
-                </Typography>
-                <Chart
-                  options={passOptions as any}
-                  series={[parseFloat(quizStats.passPercentage)]}
-                  type="radialBar"
-                  height={200}
-                />
-              </Box>
-            </Grid>
-            <Grid item xs={6}>
-              <Box sx={{ textAlign: 'center' }}>
-                <Typography variant="subtitle2" sx={{ mb: 1, color: '#F44336' }}>
-                  Fail Rate
-                </Typography>
-                <Chart
-                  options={failOptions as any}
-                  series={[parseFloat(quizStats.failPercentage)]}
-                  type="radialBar"
-                  height={200}
-                />
-              </Box>
-            </Grid>
+      <>
+        <Grid container spacing={2}>
+          <Grid item xs={6}>
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="subtitle2" sx={{ mb: 1, color: '#4CAF50' }}>
+                Pass Rate
+              </Typography>
+              <Chart
+                options={passOptions as any}
+                series={[passValue]}
+                type="radialBar"
+                height={200}
+              />
+            </Box>
           </Grid>
-          <Box sx={{ mt: 2, textAlign: 'center' }}>
-            <Typography variant="body2" color="text.secondary">
-              Total Quizzes: {quizStats.totalQuizzes}
-            </Typography>
-          </Box>
-        </>
-      ) : (
-        <Box sx={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          height: '300px',
-          textAlign: 'center'
-        }}>
-          <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
-            No Subject Selected
+          <Grid item xs={6}>
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="subtitle2" sx={{ mb: 1, color: '#F44336' }}>
+                Fail Rate
+              </Typography>
+              <Chart
+                options={failOptions as any}
+                series={[failValue]}
+                type="radialBar"
+                height={200}
+              />
+            </Box>
+          </Grid>
+        </Grid>
+        <Box sx={{ mt: 2, textAlign: 'center' }}>
+          <Typography variant="body2" color="text.secondary">
+            Total Quizzes: {quizStats.totalQuizzes}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Please select a subject to view quiz performance statistics
+            Average Score: {(quizStats as any)?.averageScore || 0}
           </Typography>
         </Box>
-      )}
+      </>
 
-      <Dialog 
-        open={openDialog} 
+      <Dialog
+        open={openDialog}
         onClose={() => setOpenDialog(false)}
         maxWidth="sm"
         fullWidth
@@ -331,7 +358,7 @@ const YearlyBreakup = ({ quizStats, onRefetch }: YearlyBreakupProps) => {
                     <ListItem
                       key={grade._id}
                       component="div"
-                      sx={{ 
+                      sx={{
                         cursor: 'pointer',
                         bgcolor: selectedGrade?._id === grade._id ? 'rgba(0, 0, 0, 0.04)' : 'transparent',
                         '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.08)' }
@@ -350,7 +377,7 @@ const YearlyBreakup = ({ quizStats, onRefetch }: YearlyBreakupProps) => {
                     <ListItem
                       key={subject._id}
                       component="div"
-                      sx={{ 
+                      sx={{
                         cursor: 'pointer',
                         bgcolor: selectedSubject?._id === subject._id ? 'rgba(0, 0, 0, 0.04)' : 'transparent',
                         '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.08)' }

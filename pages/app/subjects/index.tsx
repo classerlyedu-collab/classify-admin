@@ -163,7 +163,10 @@ const PaginationTable = () => {
       .get(endPoints.SUBJECTS, config)
       .then((response) => {
         if (response && response.data) {
-          setSubjects(response.data);
+          const arr = Array.isArray(response.data) ? response.data : response.data?.data;
+          setSubjects(Array.isArray(arr) ? arr : []);
+        } else {
+          setSubjects([]);
         }
         setIsloader(false);
       })
@@ -177,24 +180,32 @@ const PaginationTable = () => {
     fetchSubjects();
   }, []);
 
-  const handleEdit = (id: any, name: any, image: any) => {
+  const handleEdit = (id: any, name: any, image: any, file?: File | null) => {
     // Handle edit request
     const token = typeof window !== "undefined" ? window.localStorage?.getItem('authToken') : null;
     if (!token) return;
 
     const config = { headers: { Authorization: `Bearer ${token}` } };
-
-
-
-    apiRequest
-      .put(endPoints.EDIT_SUBJECT, { id, name, image }, config)
-      .then(() => {
+    const doRequest = async () => {
+      try {
+        if (file) {
+          const form = new FormData();
+          form.append('id', id);
+          form.append('name', name);
+          form.append('file', file);
+          await apiRequest.put(endPoints.EDIT_SUBJECT, form, {
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+          } as any);
+        } else {
+          await apiRequest.put(endPoints.EDIT_SUBJECT, { id, name, image }, config);
+        }
         toast.success('Subject Saved Successfully!');
         fetchSubjects();
-      })
-      .catch((error) => {
+      } catch (e) {
         toast.error('Error Saving Subject!');
-      });
+      }
+    };
+    doRequest();
     setSelectedSubject(null);
 
   };
@@ -250,6 +261,7 @@ const PaginationTable = () => {
             data={subjects}
             searchFields={['name', 'grade.grade']}
             onResultClick={handleSearchResultClick}
+            onFilterChange={setFilteredSubjects}
             maxResults={5}
           />
         </Box>
