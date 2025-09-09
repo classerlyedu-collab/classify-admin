@@ -41,23 +41,15 @@ const Modern = () => {
     failPercentage: '0',
     averageScore: '0'
   });
+  const lastQuizStatsKeyRef = React.useRef<string>('');
 
   const [activeUsers, setActiveUsers] = useState([]);
   const [stripeUsers, setStripeUsers] = useState([]);
 
-  const fetchQuizStats = (subjectId?: string) => {
-    if (!subjectId) {
-      setQuizStats({
-        totalQuizzes: 0,
-        passCount: 0,
-        failCount: 0,
-        passPercentage: '0',
-        failPercentage: '0',
-        averageScore: '0'
-      });
-      return;
-    }
-
+  const fetchQuizStats = (subjectId?: string, gradeId?: string) => {
+    // Track last requested key to avoid race conditions (overall vs subject)
+    const requestKey = subjectId ? `subject:${subjectId}` : 'overall';
+    lastQuizStatsKeyRef.current = requestKey;
     setIsloader(true);
 
     const token = typeof window !== "undefined" ? window.localStorage?.getItem('authToken') : null;
@@ -71,11 +63,20 @@ const Modern = () => {
       headers: { Authorization: `Bearer ${token}` }
     };
 
+    let url = endPoints.QUIZ_STATS;
+    if (subjectId && gradeId) {
+      url = `${endPoints.QUIZ_STATS}/${gradeId}/${subjectId}`;
+    } else if (subjectId) {
+      url = `${endPoints.QUIZ_STATS}/${subjectId}`;
+    }
+
     apiRequest
-      .get(`${endPoints.QUIZ_STATS}/${subjectId}`, config)
+      .get(url, config)
       .then((response: any) => {
+        if (lastQuizStatsKeyRef.current !== requestKey) return; // stale response
         if (response && response.data) {
-          setQuizStats(response.data);
+          const payload = response.data?.data || response.data;
+          setQuizStats(payload);
         }
         setIsloader(false);
       })
